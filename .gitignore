@@ -53,3 +53,5 @@ jenkins-azure-setup-guide.md
 jenkinslogs.md
 Jenkinsfile-alternative
 Jenkinsfile-with-credentials
+azure-credentials-guide.md
+jenkins-setup-guide.md
