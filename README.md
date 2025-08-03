@@ -2,44 +2,14 @@
 
 This project demonstrates a complete CI/CD pipeline using Jenkins to deploy Azure Functions.
 
-## 🚀 **Project Overview**
-
-- **Azure Function**: HTTP-triggered "Hello, World!" function
-- **Runtime**: Node.js 22 LTS
-- **CI/CD**: Jenkins with GitHub integration
-- **Testing**: Jest with 3 test cases
-- **Deployment**: Azure Functions
-
-## 📁 **Project Structure**
-
-```
-cicd-azure-functions/
-├── src/
-│   └── functions/
-│       └── HttpTrigger.js          # Azure Function code
-├── tests/
-│   └── HttpTrigger.test.js         # Test cases
-├── package.json                    # Dependencies and scripts
-├── Jenkinsfile                     # CI/CD pipeline definition
-├── host.json                       # Azure Functions host configuration
-└── local.settings.json             # Local development settings
-```
-
-## 🧪 **Test Cases**
-
-The project includes 3 test cases as required:
-
-1. **Status Code Test**: Verifies 200 status code
-2. **Response Body Test**: Verifies "Hello, World!" message
-3. **Content-Type Test**: Verifies correct content type header
-
-## 🛠 **Local Development**
+## **Local Development**
 
 ### **Prerequisites**
 
 - Node.js 22 LTS
 - Azure Functions Core Tools v4
 - Azure CLI
+- Jenkins (local installation)
 
 ### **Installation**
 
@@ -67,69 +37,84 @@ curl http://localhost:7071/api/HttpTrigger
 ### **Pipeline Stages**
 
 1. **Checkout**: Pulls code from GitHub
-2. **Build**: Installs dependencies
-3. **Test**: Runs Jest tests
-4. **Deploy**: Deploys to Azure Functions
+2. **Build**: Installs dependencies (`npm install`)
+3. **Test**: Runs Jest tests (3 test cases)
+4. **Deploy**: Deploys to Azure Functions with `--javascript` flag
 
 ### **Jenkins Configuration**
 
-- **Repository**: GitHub with webhook triggers
+- **Repository**: GitHub with SCM polling (every 5 minutes)
 - **Credentials**: GitHub PAT for authentication
-- **Deployment**: Azure Functions using `func azure functionapp publish`
+- **Deployment**: Azure Functions using `func azure functionapp publish --javascript`
+- **Environment**: Local Jenkins with Azure CLI integration
 
-## 🚀 **Deployment**
+## **Deployment**
+
+![FunctionAppInAzure](./screenshots/azure-function-app.png)
 
 ### **Manual Deployment**
 
 ```bash
 # Deploy to Azure Functions
-func azure functionapp publish func-cicd-project-ray-45274
+func azure functionapp publish func-cicd-project-ray-45274 --javascript --force
 ```
 
 ### **Automated Deployment**
 
-The Jenkins pipeline automatically deploys when code is pushed to the main branch.
+The Jenkins pipeline automatically deploys when code is pushed to the main branch or when SCM polling detects changes (every 5 minutes).
 
-## 📊 **Monitoring**
+## **Troubleshooting & Issues Resolved**
 
-- **Azure Portal**: Monitor function execution
-- **Application Insights**: Performance and error tracking
-- **Jenkins**: Build and deployment logs
+### **Issues Encountered and Solutions**
 
-## 🔧 **Troubleshooting**
+#### **1. Node.js Path Issues**
 
-### **Common Issues**
+**Problem**: `npm: command not found` in Jenkins environment
+**Solution**: Added Node.js path to Jenkins environment variables
 
-1. **Function not starting**: Check Node.js version (requires 22.x)
-2. **Tests failing**: Ensure all dependencies are installed
-3. **Deployment failing**: Verify Azure credentials and function app name
-
-### **Logs**
-
-```bash
-# View Jenkins logs
-tail -f ~/.jenkins/logs/jenkins.log
-
-# View function logs
-func azure functionapp logstream func-cicd-project-ray-45274
+```groovy
+PATH = "${env.PATH}:/Users/raychen/.nvm/versions/node/v22.14.0/bin:/opt/homebrew/bin"
 ```
 
-## 📝 **Assignment Requirements Met**
+#### **2. Azure CLI Authentication**
 
-- ✅ **Jenkins Setup (3%)**: Complete Jenkins configuration with GitHub integration
-- ✅ **Pipeline Stages (3%)**: Build, Test, Deploy stages implemented
-- ✅ **Test Cases (2%)**: 3 comprehensive test cases with Jest
-- ✅ **Azure Deployment (2%)**: Automated deployment to Azure Functions
+**Problem**: `func: command not found` and Azure CLI not available
+**Solution**:
 
-## 🎯 **Next Steps**
+- Added Azure CLI path to Jenkins environment
+- Implemented interactive Azure CLI login detection
+- Added fallback to deployment package creation
 
-1. Push code to GitHub repository
-2. Configure Jenkins job with webhook triggers
-3. Test the complete CI/CD pipeline
-4. Monitor deployment and function execution
+#### **3. GitHub Webhook Issues**
 
----
+**Problem**: GitHub cannot reach `localhost` URLs for webhooks
+**Solution**: Switched to SCM polling with schedule `H/5 * * * *` (every 5 minutes)
 
-**Student**: Ray Chen (45274)  
-**Course**: CI/CD Pipeline Development  
-**Technology Stack**: Jenkins, Azure Functions, Node.js, Jest
+#### **4. Student Account Limitations**
+
+**Problem**: Cannot create Azure service principals with student account
+**Solution**: Used interactive Azure CLI login instead of service principal authentication
+
+## 📸 **Screenshots**
+
+### **Pipeline Execution**
+
+![Jenkins CI/CD Pipeline Result](screenshots/jenkins-cicd-result.png)
+![Jenkins CI/CD Pipeline Result](screenshots/jenkins-pipeline-logs.png)
+
+### **Azure Function Deployment**
+
+The function is successfully deployed and returns "Hello, World!" when accessed.
+
+## 🎯 **Function URL**
+
+![Api-trigger](./screenshots/api-trigger-result.png)
+
+**Live Function**: https://func-cicd-project-ray-45274.azurewebsites.net/api/httptrigger
+
+**Test Command**:
+
+```bash
+curl https://func-cicd-project-ray-45274.azurewebsites.net/api/httptrigger
+# Expected output: "Hello, World!"
+```
