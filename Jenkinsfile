@@ -6,6 +6,11 @@ pipeline {
         PATH = "${env.PATH}:/Users/raychen/.nvm/versions/node/v22.14.0/bin"
         NODE_PATH = "/Users/raychen/.nvm/versions/node/v22.14.0/lib/node_modules"
     }
+    parameters {
+        string(name: 'AZURE_CLIENT_ID', defaultValue: '', description: 'Azure Service Principal Client ID')
+        string(name: 'AZURE_CLIENT_SECRET', defaultValue: '', description: 'Azure Service Principal Client Secret')
+        string(name: 'AZURE_TENANT_ID', defaultValue: '', description: 'Azure Tenant ID')
+    }
     stages {
         stage('Checkout') {
             steps {
@@ -60,7 +65,15 @@ pipeline {
                     sh '''
                         if command -v az &> /dev/null; then
                             echo "Azure CLI found"
-                            az account show || echo "Azure not authenticated, attempting login..."
+                            # Check if already logged in
+                            if az account show &> /dev/null; then
+                                echo "Already authenticated with Azure"
+                            else
+                                echo "Azure not authenticated, attempting interactive login..."
+                                # For local Jenkins, we can try interactive login
+                                echo "Please login to Azure in a separate terminal: az login"
+                                echo "Then run this pipeline again"
+                            fi
                         else
                             echo "Azure CLI not found, skipping installation (requires sudo privileges)"
                             echo "Will proceed with deployment package creation"
@@ -71,22 +84,48 @@ pipeline {
                     sh '''
                         echo "Deploying function to Azure..."
                         
-                        if command -v func &> /dev/null; then
-                            func azure functionapp publish $FUNCTION_APP_NAME --force
+                        # Check if Azure CLI is available for authentication
+                        if command -v az &> /dev/null; then
+                            echo "Azure CLI found, attempting deployment..."
                             
-                            if [ $? -eq 0 ]; then
-                                echo "Deployment successful!"
-                                echo "Function URL: https://$FUNCTION_APP_NAME.azurewebsites.net/api/HttpTrigger"
+                            # Check if already authenticated
+                            if az account show &> /dev/null; then
+                                echo "Azure authentication confirmed, proceeding with deployment..."
+                                
+                                if command -v func &> /dev/null; then
+                                    echo "Deploying function..."
+                                    func azure functionapp publish $FUNCTION_APP_NAME --force
+                                    
+                                    if [ $? -eq 0 ]; then
+                                        echo "Deployment successful!"
+                                        echo "Function URL: https://$FUNCTION_APP_NAME.azurewebsites.net/api/HttpTrigger"
+                                    else
+                                        echo "Deployment failed, creating package for manual deployment..."
+                                        zip -r function.zip . -x "node_modules/*" ".git/*" "*.log"
+                                        echo "Deployment package created: function.zip"
+                                    fi
+                                else
+                                    echo "Azure Functions Core Tools not available, creating deployment package..."
+                                    zip -r function.zip . -x "node_modules/*" ".git/*" "*.log"
+                                    echo "Deployment package created: function.zip"
+                                    echo "Manual deployment required: func azure functionapp publish $FUNCTION_APP_NAME"
+                                fi
                             else
-                                echo "Deployment failed, creating package for manual deployment..."
+                                echo "Azure not authenticated, creating deployment package for manual deployment..."
                                 zip -r function.zip . -x "node_modules/*" ".git/*" "*.log"
                                 echo "Deployment package created: function.zip"
+                                echo "Manual deployment steps:"
+                                echo "1. Login to Azure: az login"
+                                echo "2. Deploy function: func azure functionapp publish $FUNCTION_APP_NAME"
                             fi
                         else
-                            echo "Azure Functions Core Tools not available, creating deployment package..."
+                            echo "Azure CLI not available, creating deployment package for manual deployment..."
                             zip -r function.zip . -x "node_modules/*" ".git/*" "*.log"
                             echo "Deployment package created: function.zip"
-                            echo "Manual deployment required: func azure functionapp publish $FUNCTION_APP_NAME"
+                            echo "Manual deployment steps:"
+                            echo "1. Install Azure CLI: curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash"
+                            echo "2. Login to Azure: az login"
+                            echo "3. Deploy function: func azure functionapp publish $FUNCTION_APP_NAME"
                         fi
                     '''
                     
@@ -95,15 +134,22 @@ pipeline {
             }
         }
     }
-    post {
-        always {
-            cleanWs()
+            post {
+            always {
+                // Archive deployment package if it exists
+                script {
+                    if (fileExists('function.zip')) {
+                        archiveArtifacts artifacts: 'function.zip', fingerprint: true
+                        echo 'Deployment package archived: function.zip'
+                    }
+                }
+                cleanWs()
+            }
+            success {
+                echo 'Pipeline completed successfully!'
+            }
+            failure {
+                echo 'Pipeline failed!'
+            }
         }
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed!'
-        }
-    }
 } 

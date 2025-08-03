@@ -49,3 +49,7 @@ __azurite_db*__.json
 quick_start_guide.md
 implementation_plan.md
 jenkins_setup_status.md
+jenkins-azure-setup-guide.md
+jenkinslogs.md
+Jenkinsfile-alternative
+Jenkinsfile-with-credentials
