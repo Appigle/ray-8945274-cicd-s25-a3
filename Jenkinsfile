@@ -3,7 +3,7 @@ pipeline {
     environment {
         RESOURCE_GROUP = 'rg-cicd-project'
         FUNCTION_APP_NAME = 'func-cicd-project-ray-45274'
-        PATH = "${env.PATH}:/Users/raychen/.nvm/versions/node/v22.14.0/bin"
+        PATH = "${env.PATH}:/Users/raychen/.nvm/versions/node/v22.14.0/bin:/opt/homebrew/bin"
         NODE_PATH = "/Users/raychen/.nvm/versions/node/v22.14.0/lib/node_modules"
     }
     parameters {
@@ -63,11 +63,16 @@ pipeline {
                     
                     // Check Azure CLI and authentication
                     sh '''
+                        echo "Checking for Azure CLI..."
+                        echo "PATH: $PATH"
+                        
                         if command -v az &> /dev/null; then
                             echo "Azure CLI found"
+                            az --version
                             # Check if already logged in
                             if az account show &> /dev/null; then
                                 echo "Already authenticated with Azure"
+                                az account show --query "{name:name, id:id, tenantId:tenantId}" --output table
                             else
                                 echo "Azure not authenticated, attempting interactive login..."
                                 # For local Jenkins, we can try interactive login
@@ -75,7 +80,10 @@ pipeline {
                                 echo "Then run this pipeline again"
                             fi
                         else
-                            echo "Azure CLI not found, skipping installation (requires sudo privileges)"
+                            echo "Azure CLI not found in PATH"
+                            echo "Trying to find Azure CLI in common locations..."
+                            ls -la /opt/homebrew/bin/az 2>/dev/null || echo "Not found in /opt/homebrew/bin"
+                            ls -la /usr/local/bin/az 2>/dev/null || echo "Not found in /usr/local/bin"
                             echo "Will proceed with deployment package creation"
                         fi
                     '''
