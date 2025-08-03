@@ -50,10 +50,22 @@ pipeline {
                 script {
                     echo 'Deploying to Azure...'
                     
-                    // Create deployment package
-                    sh 'func azure functionapp publish $FUNCTION_APP_NAME'
+                    // Check if Azure Functions Core Tools is available
+                    sh '''
+                        if command -v func &> /dev/null; then
+                            echo "Azure Functions Core Tools found"
+                            func --version
+                            func azure functionapp publish $FUNCTION_APP_NAME
+                        else
+                            echo "Azure Functions Core Tools not found"
+                            echo "Creating deployment package manually..."
+                            zip -r function.zip . -x "node_modules/*" ".git/*" "*.log"
+                            echo "Deployment package created: function.zip"
+                            echo "Manual deployment required: func azure functionapp publish $FUNCTION_APP_NAME"
+                        fi
+                    '''
                     
-                    echo 'Deployment completed successfully'
+                    echo 'Deployment stage completed'
                 }
             }
         }
