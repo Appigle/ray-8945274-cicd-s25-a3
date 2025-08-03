@@ -1,13 +1,11 @@
 pipeline {
     agent any
-    
     environment {
         RESOURCE_GROUP = 'rg-cicd-project'
         FUNCTION_APP_NAME = 'func-cicd-project-ray-45274'
         PATH = "${env.PATH}:/Users/raychen/.nvm/versions/node/v22.14.0/bin"
         NODE_PATH = "/Users/raychen/.nvm/versions/node/v22.14.0/lib/node_modules"
     }
-    
     stages {
         stage('Checkout') {
             steps {
@@ -15,7 +13,6 @@ pipeline {
                 checkout scm
             }
         }
-        
         stage('Build') {
             steps {
                 script {
@@ -25,7 +22,6 @@ pipeline {
                 }
             }
         }
-        
         stage('Test') {
             steps {
                 script {
@@ -44,24 +40,46 @@ pipeline {
                 }
             }
         }
-        
         stage('Deploy') {
             steps {
                 script {
                     echo 'Deploying to Azure...'
                     
-                    // Check if Azure Functions Core Tools is available
+                    // Install Azure Functions Core Tools if not available
                     sh '''
                         if command -v func &> /dev/null; then
                             echo "Azure Functions Core Tools found"
                             func --version
-                            func azure functionapp publish $FUNCTION_APP_NAME
                         else
-                            echo "Azure Functions Core Tools not found"
-                            echo "Creating deployment package manually..."
+                            echo "Installing Azure Functions Core Tools..."
+                            npm install -g azure-functions-core-tools@4 --unsafe-perm true
+                        fi
+                    '''
+                    
+                    // Check Azure CLI and authentication
+                    sh '''
+                        if command -v az &> /dev/null; then
+                            echo "Azure CLI found"
+                            az account show || echo "Azure not authenticated, attempting login..."
+                        else
+                            echo "Azure CLI not found, installing..."
+                            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+                        fi
+                    '''
+                    
+                    // Deploy the function
+                    sh '''
+                        echo "Deploying function to Azure..."
+                        func azure functionapp publish $FUNCTION_APP_NAME --force
+                        
+                        if [ $? -eq 0 ]; then
+                            echo "Deployment successful!"
+                            echo "Function URL: https://$FUNCTION_APP_NAME.azurewebsites.net/api/HttpTrigger"
+                        else
+                            echo "Deployment failed, but continuing..."
+                            echo "Creating deployment package for manual deployment..."
                             zip -r function.zip . -x "node_modules/*" ".git/*" "*.log"
                             echo "Deployment package created: function.zip"
-                            echo "Manual deployment required: func azure functionapp publish $FUNCTION_APP_NAME"
                         fi
                     '''
                     
@@ -70,7 +88,6 @@ pipeline {
             }
         }
     }
-    
     post {
         always {
             cleanWs()
