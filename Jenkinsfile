@@ -6,11 +6,7 @@ pipeline {
         PATH = "${env.PATH}:/Users/raychen/.nvm/versions/node/v22.14.0/bin:/opt/homebrew/bin"
         NODE_PATH = "/Users/raychen/.nvm/versions/node/v22.14.0/lib/node_modules"
     }
-    parameters {
-        string(name: 'AZURE_CLIENT_ID', defaultValue: '', description: 'Azure Service Principal Client ID')
-        string(name: 'AZURE_CLIENT_SECRET', defaultValue: '', description: 'Azure Service Principal Client Secret')
-        string(name: 'AZURE_TENANT_ID', defaultValue: '', description: 'Azure Tenant ID')
-    }
+
     stages {
         stage('Checkout') {
             steps {
