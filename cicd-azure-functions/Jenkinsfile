@@ -4,6 +4,8 @@ pipeline {
     environment {
         RESOURCE_GROUP = 'rg-cicd-project'
         FUNCTION_APP_NAME = 'func-cicd-project-ray-45274'
+        PATH = "${env.PATH}:/Users/raychen/.nvm/versions/node/v22.14.0/bin"
+        NODE_PATH = "/Users/raychen/.nvm/versions/node/v22.14.0/lib/node_modules"
     }
     
     stages {
