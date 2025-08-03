@@ -35,7 +35,12 @@ pipeline {
             }
             post {
                 always {
-                    publishTestResults testResultsPattern: 'test-results/*.xml'
+                    // Archive test results if they exist
+                    script {
+                        if (fileExists('test-results')) {
+                            archiveArtifacts artifacts: 'test-results/**/*', fingerprint: true
+                        }
+                    }
                 }
             }
         }
