@@ -25,11 +25,11 @@ Cloning repository https://github.com/Appigle/ray-8945274-cicd-s25-a3
 > git config --add remote.origin.fetch +refs/heads/_:refs/remotes/origin/_ # timeout=10
 > Avoid second fetch
 > git rev-parse refs/remotes/origin/main^{commit} # timeout=10
-> Checking out Revision 758f1338eac1200cec3fea479c1d80b90ffdd24e (refs/remotes/origin/main)
+> Checking out Revision 8d7dab4dea47d4a0679b925213b200eef5eb2f6c (refs/remotes/origin/main)
 > git config core.sparsecheckout # timeout=10
-> git checkout -f 758f1338eac1200cec3fea479c1d80b90ffdd24e # timeout=10
+> git checkout -f 8d7dab4dea47d4a0679b925213b200eef5eb2f6c # timeout=10
 > Commit message: "fix: update jenkinsfile"
-> git rev-list --no-walk 774242f92f7396df2a917e2ed927f2f600ad3f28 # timeout=10
+> git rev-list --no-walk a71f935e2c06d0128b2750be3a3f7e16b562eba8 # timeout=10
 > [Pipeline] }
 > [Pipeline] // stage
 > [Pipeline] withEnv
@@ -53,9 +53,9 @@ Cloning repository https://github.com/Appigle/ray-8945274-cicd-s25-a3
 > using GIT_ASKPASS to set credentials My GitHub PAT
 > git fetch --tags --force --progress -- https://github.com/Appigle/ray-8945274-cicd-s25-a3 +refs/heads/_:refs/remotes/origin/_ # timeout=10
 > git rev-parse refs/remotes/origin/main^{commit} # timeout=10
-> Checking out Revision 758f1338eac1200cec3fea479c1d80b90ffdd24e (refs/remotes/origin/main)
+> Checking out Revision 8d7dab4dea47d4a0679b925213b200eef5eb2f6c (refs/remotes/origin/main)
 > git config core.sparsecheckout # timeout=10
-> git checkout -f 758f1338eac1200cec3fea479c1d80b90ffdd24e # timeout=10
+> git checkout -f 8d7dab4dea47d4a0679b925213b200eef5eb2f6c # timeout=10
 > Commit message: "fix: update jenkinsfile"
 > [Pipeline] }
 > [Pipeline] // stage
@@ -107,7 +107,7 @@ Azure Function HttpTrigger Tests
 Test Suites: 1 passed, 1 total
 Tests: 3 passed, 3 total
 Snapshots: 0 total
-Time: 0.113 s, estimated 1 s
+Time: 0.13 s, estimated 1 s
 Ran all test suites.
 [Pipeline] }
 [Pipeline] // script
@@ -127,28 +127,45 @@ Post stage
 Deploying to Azure...
 [Pipeline] sh
 
-- func azure functionapp publish func-cicd-project-ray-45274
-  /Users/raychen/.jenkins/workspace/ray-8945274-cicd-s25-a3@tmp/durable-5a082d53/script.sh.copy: line 1: func: command not found
-  [Pipeline] }
-  [Pipeline] // script
-  [Pipeline] }
-  [Pipeline] // stage
-  [Pipeline] stage
-  [Pipeline] { (Declarative: Post Actions)
-  [Pipeline] cleanWs
-  [WS-CLEANUP] Deleting project workspace...
-  [WS-CLEANUP] Deferred wipeout is used...
-  [WS-CLEANUP] done
-  [Pipeline] echo
-  Pipeline failed!
-  [Pipeline] }
-  [Pipeline] // stage
-  [Pipeline] }
-  [Pipeline] // withEnv
-  [Pipeline] }
-  [Pipeline] // withEnv
-  [Pipeline] }
-  [Pipeline] // node
-  [Pipeline] End of Pipeline
-  ERROR: script returned exit code 127
-  Finished: FAILURE
+- command -v func
+- echo 'Installing Azure Functions Core Tools...'
+  Installing Azure Functions Core Tools...
+- npm install -g azure-functions-core-tools@4 --unsafe-perm true
+
+added 35 packages in 1m
+
+5 packages are looking for funding
+run `npm fund` for details
+[Pipeline] sh
+
+- command -v az
+- echo 'Azure CLI not found, installing...'
+  Azure CLI not found, installing...
+- curl -sL https://aka.ms/InstallAzureCLIDeb
+- sudo bash
+  sudo: a terminal is required to read the password; either use the -S option to read from standard input or configure an askpass helper
+  sudo: a password is required
+
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] cleanWs
+[WS-CLEANUP] Deleting project workspace...
+[WS-CLEANUP] Deferred wipeout is used...
+[WS-CLEANUP] done
+[Pipeline] echo
+Pipeline failed!
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // withEnv
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+ERROR: script returned exit code 1
+Finished: FAILURE

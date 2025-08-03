@@ -62,24 +62,31 @@ pipeline {
                             echo "Azure CLI found"
                             az account show || echo "Azure not authenticated, attempting login..."
                         else
-                            echo "Azure CLI not found, installing..."
-                            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+                            echo "Azure CLI not found, skipping installation (requires sudo privileges)"
+                            echo "Will proceed with deployment package creation"
                         fi
                     '''
                     
                     // Deploy the function
                     sh '''
                         echo "Deploying function to Azure..."
-                        func azure functionapp publish $FUNCTION_APP_NAME --force
                         
-                        if [ $? -eq 0 ]; then
-                            echo "Deployment successful!"
-                            echo "Function URL: https://$FUNCTION_APP_NAME.azurewebsites.net/api/HttpTrigger"
+                        if command -v func &> /dev/null; then
+                            func azure functionapp publish $FUNCTION_APP_NAME --force
+                            
+                            if [ $? -eq 0 ]; then
+                                echo "Deployment successful!"
+                                echo "Function URL: https://$FUNCTION_APP_NAME.azurewebsites.net/api/HttpTrigger"
+                            else
+                                echo "Deployment failed, creating package for manual deployment..."
+                                zip -r function.zip . -x "node_modules/*" ".git/*" "*.log"
+                                echo "Deployment package created: function.zip"
+                            fi
                         else
-                            echo "Deployment failed, but continuing..."
-                            echo "Creating deployment package for manual deployment..."
+                            echo "Azure Functions Core Tools not available, creating deployment package..."
                             zip -r function.zip . -x "node_modules/*" ".git/*" "*.log"
                             echo "Deployment package created: function.zip"
+                            echo "Manual deployment required: func azure functionapp publish $FUNCTION_APP_NAME"
                         fi
                     '''
                     
