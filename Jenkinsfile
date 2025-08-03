@@ -102,7 +102,7 @@ pipeline {
                                 
                                 if command -v func &> /dev/null; then
                                     echo "Deploying function..."
-                                    func azure functionapp publish $FUNCTION_APP_NAME --force
+                                    func azure functionapp publish $FUNCTION_APP_NAME --javascript --force
                                     
                                     if [ $? -eq 0 ]; then
                                         echo "Deployment successful!"
@@ -116,7 +116,7 @@ pipeline {
                                     echo "Azure Functions Core Tools not available, creating deployment package..."
                                     zip -r function.zip . -x "node_modules/*" ".git/*" "*.log"
                                     echo "Deployment package created: function.zip"
-                                    echo "Manual deployment required: func azure functionapp publish $FUNCTION_APP_NAME"
+                                    echo "Manual deployment required: func azure functionapp publish $FUNCTION_APP_NAME --javascript"
                                 fi
                             else
                                 echo "Azure not authenticated, creating deployment package for manual deployment..."
@@ -124,7 +124,7 @@ pipeline {
                                 echo "Deployment package created: function.zip"
                                 echo "Manual deployment steps:"
                                 echo "1. Login to Azure: az login"
-                                echo "2. Deploy function: func azure functionapp publish $FUNCTION_APP_NAME"
+                                echo "2. Deploy function: func azure functionapp publish $FUNCTION_APP_NAME --javascript"
                             fi
                         else
                             echo "Azure CLI not available, creating deployment package for manual deployment..."
@@ -133,7 +133,7 @@ pipeline {
                             echo "Manual deployment steps:"
                             echo "1. Install Azure CLI: curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash"
                             echo "2. Login to Azure: az login"
-                            echo "3. Deploy function: func azure functionapp publish $FUNCTION_APP_NAME"
+                                                            echo "3. Deploy function: func azure functionapp publish $FUNCTION_APP_NAME --javascript"
                         fi
                     '''
                     
